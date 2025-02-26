@@ -30,7 +30,7 @@ fracture_classification_model.eval()
 preprocess = transforms.Compose([
     transforms.Resize((256, 256)),  # 根据你的模型输入大小调整
     transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0.225]),
 ])
 
 # 定义类别标签
