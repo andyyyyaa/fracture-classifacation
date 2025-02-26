@@ -12,14 +12,14 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # 加载判断是否有骨折的模型
 fracture_detection_model = models.resnet50()  # 假设是ResNet50
 fracture_detection_model.fc = nn.Linear(fracture_detection_model.fc.in_features, 2)  # 假设有两个类别：有骨折，无骨折
-fracture_detection_model.load_state_dict(torch.load('D:/model2.pth', map_location=device))
+fracture_detection_model.load_state_dict(torch.load('model2.pth', map_location=device))
 fracture_detection_model = fracture_detection_model.to(device)
 fracture_detection_model.eval()
 
 # 加载骨折类型分类模型
 fracture_classification_model = models.resnet50()  # 不传递任何参数
 fracture_classification_model.fc = nn.Linear(fracture_classification_model.fc.in_features, 10)  # 假设有10个类别
-fracture_classification_model.load_state_dict(torch.load('D:/model.pth', map_location=device, weights_only=True))
+fracture_classification_model.load_state_dict(torch.load('model.pth', map_location=device, weights_only=True))
 fracture_classification_model = fracture_classification_model.to(device)
 fracture_classification_model.eval()
 
