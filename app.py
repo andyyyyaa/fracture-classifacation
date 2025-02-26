@@ -52,7 +52,7 @@ def main():
         if image.mode != 'RGB':
             image = image.convert('RGB')
         
-        st.image(image, caption='上传的图像', use_column_width=True)
+        st.image(image, caption='上传的图像', use_container_width=True)
         
         input_tensor = preprocess(image).unsqueeze(0).to(device)
 
