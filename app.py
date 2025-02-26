@@ -1,3 +1,27 @@
+import subprocess
+import sys
+
+# 检查 Flask 是否已安装，如果没有则安装
+try:
+    import flask
+except ImportError:
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "flask"])
+
+# 检查 PyTorch 是否已安装，如果没有则安装
+try:
+    import torch
+except ImportError:
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "torch"])
+
+# 然后导入其它需要的库
+import streamlit as st
+import flask
+import torch
+
+# 你的 Streamlit 应用代码
+st.title("Streamlit + Flask + PyTorch Example")
+st.write("Flask and PyTorch are installed!")
+
 from flask import Flask, request, jsonify,render_template
 from flask_cors import CORS
 import torch
