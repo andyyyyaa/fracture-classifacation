@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>X光图像诊断系统</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>X光图像诊断系统</h1>
+        </header>
+        <main>
+            <input type="file" id="fileInput" accept="image/jpeg, image/png">
+            <button id="diagnoseButton">开始诊断</button>
+            <div id="loading" style="display: none;">正在分析图像，请稍等...</div>
+            <div id="result" style="display: none;">
+                <h2>诊断结果</h2>
+                <p id="classification"></p>
+                <p id="confidence"></p>
+                <p id="advice"></p>
+            </div>
+        </main>
+    </div>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html> 

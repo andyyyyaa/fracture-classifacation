@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>诊断结果</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>诊断结果</h1>
+        </header>
+        <main>
+            <div id="result">
+                <h2>诊断结果</h2>
+                <p id="classification">分类: {{ classification }}</p>
+                <p id="confidence">置信度: {{ confidence }}</p>
+                <p id="advice">建议: {{ advice }}</p>
+            </div>
+            <button onclick="goBack()">返回</button>
+        </main>
+    </div>
+    <script>
+        function goBack() {
+            window.location.href = '/';
+        }
+    </script>
+</body>
+</html> 
