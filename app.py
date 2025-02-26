@@ -1,40 +1,44 @@
-from flask import Flask, request, jsonify,render_template
-from flask_cors import CORS
+import streamlit as st
 import torch
 import torch.nn as nn
 from torchvision import models, transforms
 from PIL import Image
 import io
 
-app = Flask(__name__)
-CORS(app)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-# 加载判断是否有骨折的模型
-fracture_detection_model = models.resnet50()  # 假设是ResNet50
-fracture_detection_model.fc = nn.Linear(fracture_detection_model.fc.in_features, 2)  # 假设有两个类别：有骨折，无骨折
-fracture_detection_model.load_state_dict(torch.load('model2.pth', map_location=device))
+
+# 加载模型
+fracture_detection_model = models.resnet50()
+fracture_detection_model.fc = nn.Linear(fracture_detection_model.fc.in_features, 2)
+
+# 确保路径正确
+try:
+    fracture_detection_model.load_state_dict(torch.load('model2.pth', map_location=device))
+except Exception as e:
+    st.error(f"加载 fracture_detection_model 时出错: {e}")
+
 fracture_detection_model = fracture_detection_model.to(device)
 fracture_detection_model.eval()
 
-# 加载骨折类型分类模型
-fracture_classification_model = models.resnet50()  # 不传递任何参数
-fracture_classification_model.fc = nn.Linear(fracture_classification_model.fc.in_features, 10)  # 假设有10个类别
-fracture_classification_model.load_state_dict(torch.load('model.pth', map_location=device, weights_only=True))
+fracture_classification_model = models.resnet50()
+fracture_classification_model.fc = nn.Linear(fracture_classification_model.fc.in_features, 10)
+
+# 确保路径正确
+try:
+    fracture_classification_model.load_state_dict(torch.load('model.pth', map_location=device, weights_only=True))
+except Exception as e:
+    st.error(f"加载 fracture_classification_model 时出错: {e}")
+
 fracture_classification_model = fracture_classification_model.to(device)
 fracture_classification_model.eval()
 
-# 选择设备
-#device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-# 定义图像预处理
 preprocess = transforms.Compose([
-    transforms.Resize((256, 256)),  # 根据你的模型输入大小调整
+    transforms.Resize((256, 256)),
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
 ])
 
-# 定义类别标签
-class_labels = ['Avulsion Fracture 撕脱性骨折', 'Comminuted Fracture 粉碎性骨折', 'Fracture Dislocation 骨折脱位', 'Greenstick Fracture 青枝骨折', 'Hairline Fracture 线性骨折', 'Impacted Fracture 嵌入性骨折', 'Longitudinal Fracture 纵向骨折', 'Oblique Fracture 斜向骨折', 'Pathological Fracture 病理性骨折', 'Spiral Fracture 螺旋骨折']  
+class_labels = ['Avulsion Fracture 撕脱性骨折', 'Comminuted Fracture 粉碎性骨折', 'Fracture Dislocation 骨折脱位', 'Greenstick Fracture 青枝骨折', 'Hairline Fracture 线性骨折', 'Impacted Fracture 嵌入性骨折', 'Longitudinal Fracture 纵向骨折', 'Oblique Fracture 斜向骨折', 'Pathological Fracture 病理性骨折', 'Spiral Fracture 螺旋骨折']
 
 fracture_treatment = {
     "Avulsion Fracture 撕脱性骨折": "立即停止活动，避免用力拉扯受伤部位。用冰敷减少肿胀，尽量保持骨折部位静止并前往医院治疗。",
@@ -49,61 +53,56 @@ fracture_treatment = {
     "Spiral Fracture 螺旋骨折": "通常由于扭转或拉伸的暴力引起，需避免任何形式的负重或用力，立即进行固定，并前往医院治疗，通常需要影像学检查来评估伤势。"
 }
 
-@app.route('/')
-def home():
-    return render_template('index.html')
+# 读取 CSS 文件
+def load_css(file_name):
+    with open(file_name) as f:
+        st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 
-@app.route('/upload', methods=['POST'])
-def upload_file():
-    if 'file' not in request.files:
-        return jsonify({'error': 'No file part'}), 400
+# 读取 JavaScript 文件
+def load_js(file_name):
+    with open(file_name) as f:
+        st.markdown(f'<script>{f.read()}</script>', unsafe_allow_html=True)
 
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({'error': 'No selected file'}), 400
+def main():
+    st.title("骨折检测与分类")
 
-    # 读取图像并进行预处理
-    image = Image.open(io.BytesIO(file.read()))
-    input_tensor = preprocess(image).unsqueeze(0)  # 添加批次维度
-    input_tensor = input_tensor.to(device)
+    # 加载自定义 CSS 和 JavaScript
+    load_css("static/styles.css")
+    load_js("static/script.js")
 
-    # 使用第一个模型判断是否有骨折
-    with torch.no_grad():
-        output = fracture_detection_model(input_tensor)
-        probabilities = torch.nn.functional.softmax(output, dim=1)
-        has_fracture = torch.argmax(probabilities, dim=1).item() == 0  # 假设1表示有骨折
+    uploaded_file = st.file_uploader("上传一张X光片", type=["jpg", "jpeg", "png"])
 
-    if not has_fracture:
-        # 如果没有骨折，直接返回结果
-        result = {
-            'classification': '无骨折',
-            'confidence': f'{probabilities[0][1].item() * 100:.2f}%',
-            'advice': '没有检测到骨折，请保持健康。',
-        }
-    else:
-        # 如果有骨折，使用第二个模型进行详细分类
+    if uploaded_file is not None:
+        image = Image.open(uploaded_file)
+        
+        # 确保图像是 RGB 模式
+        if image.mode != 'RGB':
+            image = image.convert('RGB')
+        
+        st.image(image, caption='上传的图像', use_column_width=True)
+        
+        input_tensor = preprocess(image).unsqueeze(0).to(device)
+
         with torch.no_grad():
-            output = fracture_classification_model(input_tensor)
+            output = fracture_detection_model(input_tensor)
             probabilities = torch.nn.functional.softmax(output, dim=1)
-            confidence, predicted_class_idx = torch.max(probabilities, 1)
-            predicted_class = class_labels[predicted_class_idx.item()]
-            confidence_percentage = confidence.item() * 100
+            has_fracture = torch.argmax(probabilities, dim=1).item() == 0
 
-        # 返回详细分类结果
-        result = {
-            'classification': predicted_class,
-            'confidence': f'{confidence_percentage:.2f}%',
-            'advice': fracture_treatment[predicted_class],
-        }
+        if not has_fracture:
+            st.write("无骨折")
+            st.write(f"置信度: {probabilities[0][1].item() * 100:.2f}%")
+            st.write("建议: 没有检测到骨折，请保持健康。")
+        else:
+            with torch.no_grad():
+                output = fracture_classification_model(input_tensor)
+                probabilities = torch.nn.functional.softmax(output, dim=1)
+                confidence, predicted_class_idx = torch.max(probabilities, 1)
+                predicted_class = class_labels[predicted_class_idx.item()]
+                confidence_percentage = confidence.item() * 100
 
-    return jsonify(result)
+            st.write(f"分类: {predicted_class}")
+            st.write(f"置信度: {confidence_percentage:.2f}%")
+            st.write(f"建议: {fracture_treatment[predicted_class]}")
 
-@app.route('/result')
-def result():
-    classification = request.args.get('classification', '未知')
-    confidence = request.args.get('confidence', '未知')
-    advice = request.args.get('advice', '无建议')
-    return render_template('result.html', classification=classification, confidence=confidence, advice=advice)
-
-if __name__ == '__main__':
-    app.run(debug=True) 
+if __name__ == "__main__":
+    main() 
