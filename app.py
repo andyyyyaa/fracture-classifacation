@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 from torchvision import models, transforms
 from PIL import Image
+import io
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -12,7 +13,7 @@ fracture_detection_model.fc = nn.Linear(fracture_detection_model.fc.in_features,
 
 # 确保路径正确
 try:
-    fracture_detection_model.load_state_dict(torch.load('model2.pth', map_location=device))
+    fracture_detection_model.load_state_dict(torch.load('model2.pth', map_location=device, weights_only=False))
 except Exception as e:
     st.error(f"加载 fracture_detection_model 时出错: {e}")
 
@@ -24,7 +25,7 @@ fracture_classification_model.fc = nn.Linear(fracture_classification_model.fc.in
 
 # 确保路径正确
 try:
-    fracture_classification_model.load_state_dict(torch.load('model.pth', map_location=device, weights_only=True))
+    fracture_classification_model.load_state_dict(torch.load('model.pth', map_location=device, weights_only=False))
 except Exception as e:
     st.error(f"加载 fracture_classification_model 时出错: {e}")
 
@@ -105,3 +106,4 @@ def main():
 
 if __name__ == "__main__":
     main() 
+
