@@ -10,7 +10,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # 加载模型
 fracture_detection_model = models.resnet50()
 fracture_detection_model.fc = nn.Linear(fracture_detection_model.fc.in_features, 2)
-fracture_detection_model.load_state_dict(torch.load('model2.pth', map_location=device))
+fracture_detection_model.load_state_dict(torch.load('model2.pth', map_location=device, weights_only=True))
 fracture_detection_model = fracture_detection_model.to(device)
 fracture_detection_model.eval()
 
